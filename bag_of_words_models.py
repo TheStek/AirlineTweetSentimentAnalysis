@@ -16,6 +16,9 @@ nltk.download("stopwords")
 
 tweets = pd.read_csv("encoded_tweets.csv")
 
+# Tokenize the inputted tweet into words using the TweetTokenizer, removing any words starting with '@' or any in the 
+# english stopwords set
+
 def prepare_tweet(text, tk):
   return [word for word in tk.tokenize(text) if not re.match(r"@.*", word) and not word in nltk.corpus.stopwords.words("english")]
 
@@ -26,9 +29,13 @@ tk = TweetTokenizer()
 train["text"] = train["text"].apply(lambda x: prepare_tweet(x, tk))
 test["text"] = test["text"].apply(lambda x: prepare_tweet(x, tk))
 
+# Find the 7500 most frequent words in the train text and record these in the list word_features
+
 train_vocab = nltk.FreqDist([w.lower() for t in train["text"] for w in t])
 
 word_features = list(train_vocab)[:7500]
+
+# Take in a piece of text and record if it contains each word in the word_features list (in order)
 
 def find_features(document):
     words = set(document)
@@ -41,6 +48,8 @@ def find_features(document):
 train["text"] = train["text"].apply(find_features)
 test["text"] = test["text"].apply(find_features)
 
+# Take in a row of a dataframe and append the airline and hour to the text list to create a single observation vector
+
 def generate_observation(row):
   x = row["text"]
   x.append(row["encoded_airline"])
@@ -48,11 +57,19 @@ def generate_observation(row):
 
   return x
 
+# Apply the generate_observation function on the train and test dataframes to create the x_train and x_test data
+
 x_train = list(train[["text", "encoded_airline", "hour"]].apply(generate_observation, axis = 1))
 x_test = list(test[["text", "encoded_airline", "hour"]].apply(generate_observation, axis = 1))
 
+# Extract the train and test labels
+
 y_train = list(train["encoded_airline_sentiment"])
 y_test = list(test["encoded_airline_sentiment"])
+
+
+# Fit various models from sklearn on the generated data and evaluate them
+
 
 from sklearn.linear_model import LogisticRegression,SGDClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
@@ -102,6 +119,8 @@ for m in (gnb, mnb, cnb, bnb, catnb):
   except IndexError:
     print(f"Couldn't test {m.name_} NB")
 
+
+# Pass the bag of words data into a simple dense neural network
 
 import keras
 
