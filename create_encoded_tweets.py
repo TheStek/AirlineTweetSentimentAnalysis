@@ -1,8 +1,4 @@
 import pandas as pd
-import numpy as np
-
-
-
 
 def encode_cols(raw_data, colnames):
 
